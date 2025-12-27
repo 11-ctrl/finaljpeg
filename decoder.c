@@ -13,8 +13,8 @@ typedef struct {
 
 typedef struct {
     unsigned int   biSize;
-    int  width;
-    int  height;
+    int   width;
+    int   height;
     unsigned short planes;
     unsigned short bitCount;
     unsigned int   compression;
@@ -28,17 +28,26 @@ typedef struct {
 
 /* =========================================================
  * 寫 24-bit BMP
+ * [修正點]：參數增加原始 Header 的各項數值
  * ========================================================= */
-void write_bmp(const char *filename, int w, int h, unsigned char *rgb)
+void write_bmp(const char *filename, int w, int h, 
+               unsigned int raw_bfSize, unsigned int raw_sizeImage, 
+               int raw_xppm, int raw_yppm, 
+               unsigned int raw_clrUsed, unsigned int raw_clrImportant,
+               unsigned char *rgb)
 {
     FILE *fp = fopen(filename, "wb");
     if (!fp) { perror("write bmp"); exit(1); }
 
     int row_padded = (w * 3 + 3) & (~3);
-    int img_size = row_padded * h;
+    
+    /* 這裡原本你是計算 img_size，現在我們優先使用原始檔案的值。
+       但為了確保邏輯正確，如果原始 sizeImage 為 0 (這是允許的)，我們還是需要計算它來做寫入控制嗎？
+       不，寫入控制只依賴 w, h。Header 填入原始值即可。 */
 
-    BITMAPFILEHEADER fh = {0x4D42, 54 + img_size, 0, 0, 54};
-    BITMAPINFOHEADER ih = {40, w, h, 1, 24, 0, img_size, 0, 0, 0, 0};
+    // 填入原始 Header 數值
+    BITMAPFILEHEADER fh = {0x4D42, raw_bfSize, 0, 0, 54};
+    BITMAPINFOHEADER ih = {40, w, h, 1, 24, 0, raw_sizeImage, raw_xppm, raw_yppm, raw_clrUsed, raw_clrImportant};
 
     fwrite(&fh, sizeof(fh), 1, fp);
     fwrite(&ih, sizeof(ih), 1, fp);
@@ -48,12 +57,12 @@ void write_bmp(const char *filename, int w, int h, unsigned char *rgb)
     /* BMP：由 bottom row 開始 */
     for (int y = 0; y < h; y++) {
         for (int x = 0; x < w; x++) {
-          int i = (y * w + x) * 3;
-         row[x*3 + 0] = rgb[i + 2]; // B
-         row[x*3 + 1] = rgb[i + 1]; // G
-         row[x*3 + 2] = rgb[i + 0]; // R
+            int i = (y * w + x) * 3;
+            row[x*3 + 0] = rgb[i + 2]; // B
+            row[x*3 + 1] = rgb[i + 1]; // G
+            row[x*3 + 2] = rgb[i + 0]; // R
         }
-     fwrite(row, 1, row_padded, fp);
+        fwrite(row, 1, row_padded, fp);
     }
 
     free(row);
@@ -88,11 +97,17 @@ int main(int argc, char *argv[])
         const char *Btxt   = argv[5];
         const char *dimtxt = argv[6];
 
-        /* 讀尺寸 */
+        /* [修正點]：讀取完整的 Header 資訊 */
         int w, h;
+        unsigned int bfSize, sizeImage, clrUsed, clrImportant;
+        int xppm, yppm;
+
         FILE *fd = fopen(dimtxt, "r");
         if (!fd) { perror("dim.txt"); exit(1); }
-        fscanf(fd, "%d %d", &w, &h);
+        
+        // 讀取 Encoder 寫入的 8 個數值
+        fscanf(fd, "%d %d %u %u %d %d %u %u", 
+               &w, &h, &bfSize, &sizeImage, &xppm, &yppm, &clrUsed, &clrImportant);
         fclose(fd);
 
         unsigned char *rgb = (unsigned char*)malloc(w * h * 3);
@@ -119,7 +134,9 @@ int main(int argc, char *argv[])
         fclose(fG);
         fclose(fB);
 
-        write_bmp(outbmp, w, h, rgb);
+        // 傳遞所有參數給 write_bmp
+        write_bmp(outbmp, w, h, bfSize, sizeImage, xppm, yppm, clrUsed, clrImportant, rgb);
+        
         free(rgb);
 
         printf("Mode 0 decoding done: %s\n", outbmp);
@@ -129,7 +146,7 @@ int main(int argc, char *argv[])
     /* ================= Mode 1 ================= */
     if (mode == 1) {
         fprintf(stderr, "Mode 1 decoder: not implemented yet.\n");
-        return 0;   
+        return 0;
     }
 
     /* ================= Mode 2 ================= */

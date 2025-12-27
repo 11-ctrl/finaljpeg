@@ -12,8 +12,8 @@ typedef struct {
 
 typedef struct {
     unsigned int   biSize;
-    int  width;
-    int  height;
+    int   width;
+    int   height;
     unsigned short planes;
     unsigned short bitCount;
     unsigned int   compression;
@@ -50,9 +50,18 @@ void encode_mode0(const char *bmpfile,
     int w = ih.width;
     int h = ih.height;
 
-    /* 寫 dim.txt */
+    /* [修正點]：寫 dim.txt 時，保存完整的 Header 資訊
+     * 格式: width height bfSize sizeImage xppm yppm clrUsed clrImportant
+     */
     FILE *fd = fopen(dimtxt, "w");
-    fprintf(fd, "%d %d\n", w, h);
+    fprintf(fd, "%d %d %u %u %d %d %u %u\n", 
+            w, h, 
+            fh.bfSize,       // 原始檔案大小
+            ih.sizeImage,    // 原始影像數據大小
+            ih.xppm,         // 水平解析度
+            ih.yppm,         // 垂直解析度
+            ih.clrUsed,      // 調色盤使用數
+            ih.clrImportant);// 重要顏色數
     fclose(fd);
 
     FILE *fR = fopen(Rtxt, "w");
