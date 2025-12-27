@@ -25,9 +25,6 @@ typedef struct {
 } BITMAPINFOHEADER;
 #pragma pack(pop)
 
-/* =========================================================
- * Mode 0：RGB → R/G/B.txt
- * ========================================================= */
 void encode_mode0(const char *bmpfile,
                   const char *Rtxt,
                   const char *Gtxt,
@@ -50,18 +47,15 @@ void encode_mode0(const char *bmpfile,
     int w = ih.width;
     int h = ih.height;
 
-    /* [修正點]：寫 dim.txt 時，保存完整的 Header 資訊
-     * 格式: width height bfSize sizeImage xppm yppm clrUsed clrImportant
-     */
     FILE *fd = fopen(dimtxt, "w");
     fprintf(fd, "%d %d %u %u %d %d %u %u\n", 
             w, h, 
-            fh.bfSize,       // 原始檔案大小
-            ih.sizeImage,    // 原始影像數據大小
-            ih.xppm,         // 水平解析度
-            ih.yppm,         // 垂直解析度
-            ih.clrUsed,      // 調色盤使用數
-            ih.clrImportant);// 重要顏色數
+            fh.bfSize,      
+            ih.sizeImage,    
+            ih.xppm,         
+            ih.yppm,         
+            ih.clrUsed,
+            ih.clrImportant);
     fclose(fd);
 
     FILE *fR = fopen(Rtxt, "w");
@@ -94,9 +88,6 @@ void encode_mode0(const char *bmpfile,
     printf("Mode 0 encoding done.\n");
 }
 
-/* =========================================================
- * main
- * ========================================================= */
 int main(int argc, char *argv[]) {
 
     if (argc < 4) {

@@ -26,10 +26,6 @@ typedef struct {
 } BITMAPINFOHEADER;
 #pragma pack(pop)
 
-/* =========================================================
- * 寫 24-bit BMP
- * [修正點]：參數增加原始 Header 的各項數值
- * ========================================================= */
 void write_bmp(const char *filename, int w, int h, 
                unsigned int raw_bfSize, unsigned int raw_sizeImage, 
                int raw_xppm, int raw_yppm, 
@@ -40,12 +36,7 @@ void write_bmp(const char *filename, int w, int h,
     if (!fp) { perror("write bmp"); exit(1); }
 
     int row_padded = (w * 3 + 3) & (~3);
-    
-    /* 這裡原本你是計算 img_size，現在我們優先使用原始檔案的值。
-       但為了確保邏輯正確，如果原始 sizeImage 為 0 (這是允許的)，我們還是需要計算它來做寫入控制嗎？
-       不，寫入控制只依賴 w, h。Header 填入原始值即可。 */
 
-    // 填入原始 Header 數值
     BITMAPFILEHEADER fh = {0x4D42, raw_bfSize, 0, 0, 54};
     BITMAPINFOHEADER ih = {40, w, h, 1, 24, 0, raw_sizeImage, raw_xppm, raw_yppm, raw_clrUsed, raw_clrImportant};
 
@@ -54,7 +45,6 @@ void write_bmp(const char *filename, int w, int h,
 
     unsigned char *row = (unsigned char*)calloc(row_padded, 1);
 
-    /* BMP：由 bottom row 開始 */
     for (int y = 0; y < h; y++) {
         for (int x = 0; x < w; x++) {
             int i = (y * w + x) * 3;
@@ -69,9 +59,6 @@ void write_bmp(const char *filename, int w, int h,
     fclose(fp);
 }
 
-/* =========================================================
- * main
- * ========================================================= */
 int main(int argc, char *argv[])
 {
     if (argc < 2) {
@@ -81,9 +68,6 @@ int main(int argc, char *argv[])
 
     int mode = atoi(argv[1]);
 
-    /* ================= Mode 0 =================
-     * decoder 0 out.bmp R.txt G.txt B.txt dim.txt
-     */
     if (mode == 0) {
         if (argc != 7) {
             fprintf(stderr,
@@ -97,7 +81,6 @@ int main(int argc, char *argv[])
         const char *Btxt   = argv[5];
         const char *dimtxt = argv[6];
 
-        /* [修正點]：讀取完整的 Header 資訊 */
         int w, h;
         unsigned int bfSize, sizeImage, clrUsed, clrImportant;
         int xppm, yppm;
@@ -105,7 +88,6 @@ int main(int argc, char *argv[])
         FILE *fd = fopen(dimtxt, "r");
         if (!fd) { perror("dim.txt"); exit(1); }
         
-        // 讀取 Encoder 寫入的 8 個數值
         fscanf(fd, "%d %d %u %u %d %d %u %u", 
                &w, &h, &bfSize, &sizeImage, &xppm, &yppm, &clrUsed, &clrImportant);
         fclose(fd);
@@ -134,7 +116,6 @@ int main(int argc, char *argv[])
         fclose(fG);
         fclose(fB);
 
-        // 傳遞所有參數給 write_bmp
         write_bmp(outbmp, w, h, bfSize, sizeImage, xppm, yppm, clrUsed, clrImportant, rgb);
         
         free(rgb);
@@ -143,19 +124,16 @@ int main(int argc, char *argv[])
         return 0;
     }
 
-    /* ================= Mode 1 ================= */
     if (mode == 1) {
         fprintf(stderr, "Mode 1 decoder: not implemented yet.\n");
         return 0;
     }
 
-    /* ================= Mode 2 ================= */
     if (mode == 2) {
         fprintf(stderr, "Mode 2 decoder: not implemented yet.\n");
         return 0;
     }
 
-    /* ================= Mode 3 ================= */
     if (mode == 3) {
         fprintf(stderr, "Mode 3 decoder: not implemented yet.\n");
         return 0;

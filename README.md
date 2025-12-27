@@ -2,9 +2,9 @@
 
 ## 一、系統實作進度
 
-本專案實作了一個簡化版的 JPEG-like 編碼與解碼系統，使用 C 語言完成。系統支援 **四種模式**，其中 Mode 0 為可完整交作業的版本。
+這個專案希望我們實作一個JPEG編碼與解碼系統，使用C語言完成。系統支援**四種模式**，分別為Mode 0,Mode 1,Mode 2,Mode 3，而此次專題實作我只製作了Mode 0的部分，剩下的Mode皆只有理論部分。
 
-### 1. 系統流程（Block Diagram 文字版）
+### 1. 系統流程
 
 BMP Image (24-bit)
 │
@@ -24,35 +24,25 @@ Decoder
 ├─ Mode 2 → BMP (placeholder)
 └─ Mode 3 → BMP (placeholder)
 
-markdown
-複製程式碼
-
 ### 2. 工作日誌（文字版）
 
-- **2025/12/23**  
+- **2025/12/26**  
   - 完成 Mode 0 的 encoder / decoder，能正確生成 R/G/B.txt 與重建 BMP。  
 
-- **2025/12/24**  
+- **2025/12/27**  
   - 修正 BMP 上下翻轉問題，確保解碼後圖像方向正確。  
 
-- **2025/12/25**  
-  - 建立 GitHub Actions workflow，自動跑 Mode 0，並產生 artifact 供評分。  
-
-- **2025/12/26**  
+- **2025/12/27**  
   - 撰寫 README，補充心得與系統流程說明。  
-
----
 
 ## 二、心得與感想
 
 在這次專案中，我學到以下幾點：
 
-1. **影像處理流程的理解**：從 RGB → YCbCr，再量化、解碼回來的每個步驟都需要小心處理。
-2. **BMP 格式細節**：BMP 的 row padding 與上下翻轉非常容易出錯。
-3. **Debug workflow**：GitHub Actions 幫助我自動檢查 Mode 0 的 encode/decode，讓測試變得穩定且可重現。
-4. **軟體工程觀念**：Makefile、yml、artifact 的使用讓專案可維護性大大提高。
-
-總結來說，這次專案不僅練習了影像壓縮理論，也熟悉了完整的自動化流程。
+1. **影像處理流程的理解**：從RGB→YCbCr，再量化、解碼回來的每個步驟都需要處理。
+2. **Debug workflow**：GitHub 幫助我自動檢查 Mode 0 的 encoder/decoder，讓我可以知道是哪個環節出錯了。
+3. **軟體工程觀念**：Makefile、yml、artifact 的使用讓專案可維護性大大提高。
+4. **cmp糾錯**：直接在terminal使用cmp可以知道兩個檔案的首個不同點在哪裡。
 
 ---
 
@@ -74,7 +64,7 @@ markdown
   uses: actions/upload-artifact@v3
   with:
     name: mode0-artifact
-    path: |
+    path: | 
       R.txt
       G.txt
       B.txt
