@@ -44,8 +44,14 @@ jobs:
         echo "Running cmp..."
         cmp Kimberly.bmp ResKimberly.bmp
 
-    - name: Upload artifacts (ResKimberly)
+    - name: Upload artifacts (Mode 0 outputs)
+      if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: ResKimberly
-        path: ResKimberly.bmp
+        name: mode0-artifacts
+        path: |
+          ResKimberly.bmp
+          R.txt
+          G.txt
+          B.txt
+          dim.txt
