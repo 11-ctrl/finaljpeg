@@ -44,13 +44,11 @@ jobs:
         echo "Running cmp..."
         cmp Kimberly.bmp ResKimberly.bmp
 
-    - name: Success message
-      run: |
-        echo "Mode 0 passed: encoder + decoder are bit-exact."
-        - name: Upload artifacts (outputs)
+    - name: Upload artifacts (Mode 0 outputs)
+      if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: mode0-results
+        name: mode0-artifacts
         path: |
           ResKimberly.bmp
           R.txt
