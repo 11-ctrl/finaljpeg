@@ -47,3 +47,13 @@ jobs:
     - name: Success message
       run: |
         echo "Mode 0 passed: encoder + decoder are bit-exact."
+        - name: Upload artifacts (outputs)
+      uses: actions/upload-artifact@v4
+      with:
+        name: mode0-results
+        path: |
+          ResKimberly.bmp
+          R.txt
+          G.txt
+          B.txt
+          dim.txt
