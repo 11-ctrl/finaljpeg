@@ -1,170 +1,111 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
-#include <string.h>
-#include <math.h>
 
 #pragma pack(push,1)
 typedef struct {
-    uint16_t bfType;
-    uint32_t bfSize;
-    uint16_t bfReserved1;
-    uint16_t bfReserved2;
-    uint32_t bfOffBits;
+    unsigned short bfType;
+    unsigned int bfSize;
+    unsigned short bfReserved1;
+    unsigned short bfReserved2;
+    unsigned int bfOffBits;
 } BITMAPFILEHEADER;
 
 typedef struct {
-    uint32_t biSize;
-    int32_t  biWidth;
-    int32_t  biHeight;
-    uint16_t biPlanes;
-    uint16_t biBitCount;
-    uint32_t biCompression;
-    uint32_t biSizeImage;
-    int32_t  biXPelsPerMeter;
-    int32_t  biYPelsPerMeter;
-    uint32_t biClrUsed;
-    uint32_t biClrImportant;
+    unsigned int biSize;
+    int width;
+    int height;
+    unsigned short planes;
+    unsigned short bitCount;
+    unsigned int compression;
+    unsigned int sizeImage;
+    int xppm;
+    int yppm;
+    unsigned int clrUsed;
+    unsigned int clrImportant;
 } BITMAPINFOHEADER;
 #pragma pack(pop)
 
-static inline unsigned char clamp(int v) {
-    if (v < 0) return 0;
-    if (v > 255) return 255;
-    return (unsigned char)v;
-}
+/* 寫 BMP */
+void write_bmp(const char *filename,int w,int h,unsigned char *rgb){
+    FILE *fp=fopen(filename,"wb");
+    if(!fp){ perror("write bmp"); exit(1);}
+    int row_padded=(w*3+3)&(~3);
+    int img_size=row_padded*h;
 
-void write_bmp(const char *filename, unsigned char *rgb, int width, int height) {
-    FILE *fp = fopen(filename, "wb");
-    if (!fp) {
-        perror("Cannot open output bmp");
-        exit(1);
-    }
+    BITMAPFILEHEADER fh={0x4D42,54+img_size,0,0,54};
+    BITMAPINFOHEADER ih={40,w,h,1,24,0,img_size,0,0,0,0};
 
-    int row_padded = (width * 3 + 3) & (~3);
-    int img_size = row_padded * height;
+    fwrite(&fh,sizeof(fh),1,fp);
+    fwrite(&ih,sizeof(ih),1,fp);
 
-    BITMAPFILEHEADER bfh;
-    BITMAPINFOHEADER bih;
+    unsigned char *row=(unsigned char*)calloc(row_padded,1);
 
-    bfh.bfType = 0x4D42;
-    bfh.bfSize = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER) + img_size;
-    bfh.bfReserved1 = 0;
-    bfh.bfReserved2 = 0;
-    bfh.bfOffBits = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
-
-    bih.biSize = sizeof(BITMAPINFOHEADER);
-    bih.biWidth = width;
-    bih.biHeight = height;
-    bih.biPlanes = 1;
-    bih.biBitCount = 24;
-    bih.biCompression = 0;
-    bih.biSizeImage = img_size;
-    bih.biXPelsPerMeter = 0;
-    bih.biYPelsPerMeter = 0;
-    bih.biClrUsed = 0;
-    bih.biClrImportant = 0;
-
-    fwrite(&bfh, sizeof(bfh), 1, fp);
-    fwrite(&bih, sizeof(bih), 1, fp);
-
-    unsigned char *row = (unsigned char*)calloc(row_padded, 1);
-
-    for (int y = height - 1; y >= 0; y--) {
-        for (int x = 0; x < width; x++) {
-            row[x*3 + 0] = rgb[(y*width + x)*3 + 2]; // B
-            row[x*3 + 1] = rgb[(y*width + x)*3 + 1]; // G
-            row[x*3 + 2] = rgb[(y*width + x)*3 + 0]; // R
+    for(int y=h-1;y>=0;y--){
+        for(int x=0;x<w;x++){
+            int i=(y*w+x)*3;
+            row[x*3+2]=rgb[i+0]; // R
+            row[x*3+1]=rgb[i+1]; // G
+            row[x*3+0]=rgb[i+2]; // B
         }
-        fwrite(row, row_padded, 1, fp);
+        fwrite(row,1,row_padded,fp);
     }
 
     free(row);
     fclose(fp);
 }
 
-int main(int argc, char *argv[]) {
-    if (argc < 2) {
-        printf("Usage error\n");
+int main(int argc,char *argv[]){
+    // Mode 0 總共有 6 個參數：decoder 0 out.bmp R.txt G.txt B.txt dim.txt
+    if(argc != 7){
+        fprintf(stderr,"Usage: decoder 0 out.bmp R.txt G.txt B.txt dim.txt\n");
         return 1;
     }
 
-    int mode = atoi(argv[1]);
+    const char *outbmp = argv[2];
+    const char *Rtxt = argv[3];
+    const char *Gtxt = argv[4];
+    const char *Btxt = argv[5];
+    const char *dimtxt = argv[6];
 
-    /* ================= Mode 0 ================= */
-    if (mode == 0) {
-        // decoder 0 Res.bmp R.txt G.txt B.txt dim.txt
-        if (argc != 7) {
-            printf("Usage: decoder 0 out.bmp R.txt G.txt B.txt dim.txt\n");
-            return 1;
-        }
-        FILE *fR = fopen(argv[3], "r");
-        FILE *fG = fopen(argv[4], "r");
-        FILE *fB = fopen(argv[5], "r");
-        FILE *fd = fopen(argv[6], "r");
-        if (!fR || !fG || !fB || !fd) {
-            printf("Mode 0: cannot open input files\n");
-            return 1;
-        }
-        fclose(fR); fclose(fG); fclose(fB); fclose(fd);
-        printf("Mode 0 done (interface check)\n");
-        return 0;
-    }
-
-    /* ================= Mode 1 ================= */
-    if (mode == 1) {
-        // decoder 1 Y.txt Cb.txt Cr.txt out.bmp dim.txt
-        if (argc != 7) {
-            printf("Usage: decoder 1 Y.txt Cb.txt Cr.txt out.bmp dim.txt\n");
-            return 1;
-        }
-
-        FILE *fY  = fopen(argv[2], "r");
-        FILE *fCb = fopen(argv[3], "r");
-        FILE *fCr = fopen(argv[4], "r");
-        FILE *fd  = fopen(argv[6], "r");
-        if (!fY || !fCb || !fCr || !fd) {
-            printf("Cannot open input files\n");
-            return 1;
-        }
-
-        int width, height;
-        fscanf(fd, "%d %d", &width, &height);
+    // 讀取圖片尺寸
+    int w,h;
+    FILE *fd=fopen(dimtxt,"r");
+    if(!fd){ perror("dim.txt"); exit(1);}
+    if(fscanf(fd,"%d %d",&w,&h)!=2){
+        fprintf(stderr,"Failed to read width and height from dim.txt\n");
         fclose(fd);
+        return 1;
+    }
+    fclose(fd);
 
-        int size = width * height;
-        int *Y  = (int*)malloc(sizeof(int) * size);
-        int *Cb = (int*)malloc(sizeof(int) * size);
-        int *Cr = (int*)malloc(sizeof(int) * size);
-        unsigned char *rgb = (unsigned char*)malloc(size * 3);
+    unsigned char *rgb=(unsigned char*)malloc(w*h*3);
+    if(!rgb){ perror("malloc"); exit(1); }
 
-        for (int i = 0; i < size; i++) fscanf(fY,  "%d", &Y[i]);
-        for (int i = 0; i < size; i++) fscanf(fCb, "%d", &Cb[i]);
-        for (int i = 0; i < size; i++) fscanf(fCr, "%d", &Cr[i]);
+    // 讀取 R/G/B.txt
+    FILE *fR=fopen(Rtxt,"r");
+    FILE *fG=fopen(Gtxt,"r");
+    FILE *fB=fopen(Btxt,"r");
+    if(!fR || !fG || !fB){ perror("fopen R/G/B.txt"); exit(1); }
 
-        fclose(fY); fclose(fCb); fclose(fCr);
-
-        for (int i = 0; i < size; i++) {
-            double y  = Y[i];
-            double cb = Cb[i] - 128.0;
-            double cr = Cr[i] - 128.0;
-
-            int r = (int)(y + 1.402 * cr);
-            int g = (int)(y - 0.34414 * cb - 0.71414 * cr);
-            int b = (int)(y + 1.772 * cb);
-
-            rgb[i*3 + 0] = clamp(r);
-            rgb[i*3 + 1] = clamp(g);
-            rgb[i*3 + 2] = clamp(b);
+    for(int i=0;i<w*h;i++){
+        int r,g,b;
+        if(fscanf(fR,"%d",&r)!=1 || fscanf(fG,"%d",&g)!=1 || fscanf(fB,"%d",&b)!=1){
+            fprintf(stderr,"Failed to read pixel %d\n",i);
+            fclose(fR); fclose(fG); fclose(fB);
+            free(rgb);
+            return 1;
         }
-
-        write_bmp(argv[5], rgb, width, height);
-
-        free(Y); free(Cb); free(Cr); free(rgb);
-        printf("Mode 1 decode done\n");
-        return 0;
+        rgb[i*3+0]=(unsigned char)r;
+        rgb[i*3+1]=(unsigned char)g;
+        rgb[i*3+2]=(unsigned char)b;
     }
 
-    printf("Mode not implemented\n");
+    fclose(fR); fclose(fG); fclose(fB);
+
+    // 寫 BMP
+    write_bmp(outbmp,w,h,rgb);
+    free(rgb);
+
+    printf("Mode 0 decoding done. Output: %s\n", outbmp);
     return 0;
 }

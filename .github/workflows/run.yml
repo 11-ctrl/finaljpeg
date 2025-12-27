@@ -1,37 +1,43 @@
-name: build-and-run
+name: MMSP Build & Test Mode0
 
 on:
   push:
+    branches: [ main ]
   pull_request:
+    branches: [ main ]
 
 jobs:
-  run:
+  build-and-test:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-    - name: Download test image (Kimberly.bmp)
-      run: |
-        curl -L -o Kimberly.bmp https://raw.githubusercontent.com/cychiang-ntpu/mmsp-2025-final-jpeg/main/Kimberly.bmp
+      - name: Install GCC
+        run: sudo apt-get update && sudo apt-get install -y build-essential
 
-    - name: Build encoder and decoder
-      run: |
-        make
+      - name: Download test BMP
+        run: curl -o Kimberly.bmp https://raw.githubusercontent.com/cychiang-ntpu/mmsp-2025-final-jpeg/main/Kimberly.bmp
 
-    - name: Run encoder mode 0
-      run: |
-        ./encoder 0 Kimberly.bmp R.txt G.txt B.txt dim.txt
+      - name: Build encoder and decoder
+        run: make
 
-    - name: Run encoder mode 1
-      run: |
-        ./encoder 1 Kimberly.bmp Y.txt Cb.txt Cr.txt dim.txt
+      - name: Run Mode 0 encoder
+        run: ./encoder 0 Kimberly.bmp R.txt G.txt B.txt dim.txt
 
-    - name: Run decoder mode 1
-      run: |
-        ./decoder 1 Y.txt Cb.txt Cr.txt out.bmp dim.txt
+      - name: Run Mode 0 decoder
+        run: ./decoder 0 ResKimberly.bmp R.txt G.txt B.txt dim.txt
 
-    - name: List generated files
-      run: |
-        ls -lh
+      - name: Check output
+        run: |
+          echo "Comparing original and reconstructed BMP..."
+          if cmp -s Kimberly.bmp ResKimberly.bmp; then
+            echo "Success: ResKimberly.bmp is identical to Kimberly.bmp"
+          else
+            echo "Error: ResKimberly.bmp differs from Kimberly.bmp"
+            exit 1
+          fi
+
+      - name: List outputs
+        run: ls -l
