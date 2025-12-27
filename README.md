@@ -6,23 +6,23 @@
 
 ### 1. 系統流程
 
-BMP Image (24-bit)
-│
-▼
-Encoder
-│
-├─ Mode 0 → R.txt / G.txt / B.txt / dim.txt
-├─ Mode 1 → Y.txt / Cb.txt / Cr.txt / dim.txt
-├─ Mode 2 → coeff.txt / dim.txt
-└─ Mode 3 → bitstream.bin / dim.txt
-│
-▼
-Decoder
-│
-├─ Mode 0 → ResBMP (由 R/G/B.txt + dim.txt 重建)
-├─ Mode 1 → ResBMP (由 Y/Cb/Cr.txt 重建)
-├─ Mode 2 → BMP (placeholder)
-└─ Mode 3 → BMP (placeholder)
+BMP Image (24-bit)  
+│  
+▼  
+Encoder  
+│  
+├─ Mode 0 → R.txt / G.txt / B.txt / dim.txt  
+├─ Mode 1 → Y.txt / Cb.txt / Cr.txt / dim.txt  
+├─ Mode 2 → coeff.txt / dim.txt  
+└─ Mode 3 → bitstream.bin / dim.txt  
+│  
+▼  
+Decoder  
+│  
+├─ Mode 0 → ResBMP (由 R/G/B.txt + dim.txt 重建)  
+├─ Mode 1 → ResBMP (由 Y/Cb/Cr.txt 重建)  
+├─ Mode 2 → BMP (placeholder)  
+└─ Mode 3 → BMP (placeholder)  
 
 ### 2. 工作日誌（文字版）
 
