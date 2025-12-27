@@ -1,19 +1,21 @@
-# ==========================================
-# Makefile for MMSP JPEG-like Project
-# ==========================================
-
 CC = gcc
 CFLAGS = -Wall -O2
 
-all: encoder decoder
+ENC = encoder
+DEC = decoder
 
-encoder: encoder.c
-	$(CC) $(CFLAGS) encoder.c -o encoder -lm
+all: $(ENC) $(DEC)
 
-decoder: decoder.c
-	$(CC) $(CFLAGS) decoder.c -o decoder -lm
+$(ENC): encoder.c
+	$(CC) $(CFLAGS) encoder.c -o $(ENC)
+
+$(DEC): decoder.c
+	$(CC) $(CFLAGS) decoder.c -o $(DEC)
+
+run: all
+	./$(ENC) 0 Kimberly.bmp R.txt G.txt B.txt dim.txt
+	./$(DEC) 0 ResKimberly.bmp R.txt G.txt B.txt dim.txt
+	@echo "Mode 0 encode/decode finished."
 
 clean:
-	rm -f encoder decoder *.o Res*.bmp
-
-.PHONY: all clean
+	rm -f $(ENC) $(DEC) R.txt G.txt B.txt dim.txt ResKimberly.bmp

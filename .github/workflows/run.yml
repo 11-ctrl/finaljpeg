@@ -1,43 +1,49 @@
-name: MMSP Build & Test Mode0
+name: MMSP Mode 0 Test (with diff & cmp)
 
 on:
   push:
-    branches: [ main ]
   pull_request:
-    branches: [ main ]
 
 jobs:
-  build-and-test:
+  mode0-test:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+    - name: Checkout repository
+      uses: actions/checkout@v4
 
-      - name: Install GCC
-        run: sudo apt-get update && sudo apt-get install -y build-essential
+    - name: Install build tools
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential
 
-      - name: Download test BMP
-        run: curl -o Kimberly.bmp https://raw.githubusercontent.com/cychiang-ntpu/mmsp-2025-final-jpeg/main/Kimberly.bmp
+    - name: Download test image (Kimberly.bmp)
+      run: |
+        curl -L -o Kimberly.bmp \
+        https://raw.githubusercontent.com/cychiang-ntpu/mmsp-2025-final-jpeg/main/Kimberly.bmp
 
-      - name: Build encoder and decoder
-        run: make
+    - name: Build encoder and decoder
+      run: |
+        make
 
-      - name: Run Mode 0 encoder
-        run: ./encoder 0 Kimberly.bmp R.txt G.txt B.txt dim.txt
+    - name: Run Mode 0 encoder
+      run: |
+        ./encoder 0 Kimberly.bmp R.txt G.txt B.txt dim.txt
 
-      - name: Run Mode 0 decoder
-        run: ./decoder 0 ResKimberly.bmp R.txt G.txt B.txt dim.txt
+    - name: Run Mode 0 decoder
+      run: |
+        ./decoder 0 ResKimberly.bmp R.txt G.txt B.txt dim.txt
 
-      - name: Check output
-        run: |
-          echo "Comparing original and reconstructed BMP..."
-          if cmp -s Kimberly.bmp ResKimberly.bmp; then
-            echo "Success: ResKimberly.bmp is identical to Kimberly.bmp"
-          else
-            echo "Error: ResKimberly.bmp differs from Kimberly.bmp"
-            exit 1
-          fi
+    - name: Diff original and reconstructed BMP
+      run: |
+        echo "Running diff..."
+        diff Kimberly.bmp ResKimberly.bmp
 
-      - name: List outputs
-        run: ls -l
+    - name: Cmp original and reconstructed BMP
+      run: |
+        echo "Running cmp..."
+        cmp Kimberly.bmp ResKimberly.bmp
+
+    - name: Success message
+      run: |
+        echo "Mode 0 passed: encoder + decoder are bit-exact."
